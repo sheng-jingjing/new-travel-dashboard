@@ -96,8 +96,8 @@
         .kpi-value { font-size: 26px; font-weight: 700; color: #1a1a2e; line-height: 1; }
         .kpi-value .unit { font-size: 13px; font-weight: 400; color: #8c8c8c; margin-left: 3px; }
         .kpi-change { font-size: 12px; margin-top: 8px; display: flex; align-items: center; gap: 4px; }
-        .kpi-change.up      { color: #ff4d4f; }
-        .kpi-change.down    { color: #52c41a; }
+        .kpi-change.bad     { color: #ff4d4f; }
+        .kpi-change.good    { color: #52c41a; }
         .kpi-change.neutral { color: #bfbfbf; }
         .chart-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
         .chart-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
@@ -142,8 +142,9 @@
         <div class="kpi-grid" id="kpiCards"></div>
     </div>
 
+    <!-- ✅ 修改2：费用分析 → 差旅数据 -->
     <div class="section-block">
-        <div class="section-title">📊 费用分析</div>
+        <div class="section-title">📊 差旅数据</div>
         <div class="chart-grid-2">
             <div class="chart-card">
                 <div class="chart-title">差旅费用构成趋势</div>
@@ -156,11 +157,11 @@
         </div>
     </div>
 
+    <!-- ✅ 修改3：预订行为指标 → 差旅预订行为指标 -->
     <div class="section-block">
-        <div class="section-title">🎫 预订行为指标</div>
+        <div class="section-title">🎫 差旅预订行为指标</div>
         <div class="chart-grid-2">
             <div class="chart-card">
-                <!-- ✅ 修改2：标题酒店间夜 → 酒店 -->
                 <div class="chart-title">差旅预订数量构成（机票 / 酒店 / 火车票）</div>
                 <div id="chartBookingVolume" style="height:280px"></div>
             </div>
@@ -199,21 +200,7 @@
         </div>
     </div>
 
-    <div class="section-block">
-        <!-- ✅ 修改3：节省分析图表标题更新 -->
-        <div class="section-title">💚 节省分析</div>
-        <div class="chart-grid-2">
-            <div class="chart-card">
-                <div class="chart-title">各类节省金额趋势（堆叠柱）</div>
-                <div id="chartSavingsTrend" style="height:280px"></div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-title">当月节省构成占比</div>
-                <div id="chartSavingsPie" style="height:280px"></div>
-            </div>
-        </div>
-    </div>
-
+    <!-- ✅ 修改4：敏感订单放在节省分析前面 -->
     <div class="section-block">
         <div class="section-title">🔍 敏感订单 & 退款监控</div>
         <div class="chart-grid-2">
@@ -224,6 +211,21 @@
             <div class="chart-card">
                 <div class="chart-title">敏感订单率 & 核查率趋势</div>
                 <div id="chartSensitiveRate" style="height:250px"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ 修改4：节省分析放在最后 -->
+    <div class="section-block">
+        <div class="section-title">💚 节省分析</div>
+        <div class="chart-grid-2">
+            <div class="chart-card">
+                <div class="chart-title">各类节省金额趋势（堆叠柱）</div>
+                <div id="chartSavingsTrend" style="height:280px"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">当月节省构成占比</div>
+                <div id="chartSavingsPie" style="height:280px"></div>
             </div>
         </div>
     </div>
@@ -284,7 +286,6 @@ const D = {
     退款金额:         [6931,        3937,        9387,        8475      ],
 
     // ── 节省金额（元）────────────────────────────────────────
-    // ✅ 修改3：去掉火车票服务费节省，账单减免改为打车账单减免
     酒店协议价节省:   [210608,      67900,       225000,      184000    ],
     机票协议价节省:   [34596,       11858,       39000,       44000     ],
     打车账单减免节省: [31856,       20147,       37985,       0         ],
@@ -310,15 +311,37 @@ const fmt = {
     num:  v => v.toLocaleString(),
 };
 
-// 绝对差值环比（用于折扣率/提前天数/超标率/敏感率）
+/* ================================================================
+   环比工具函数
+   badDir 说明：
+     'up'   → 上升是坏事（红），下降是好事（绿）  如：超标率、敏感率、消费金额
+     'down' → 下降是坏事（红），上升是好事（绿）  如：折扣率、提前天数、出差人次、预订量
+   ================================================================ */
+
+// 普通百分比环比（用于金额类）
+function changeHTML(arr, idx, badDir = 'up') {
+    if (idx === 0) return `<span class="kpi-change neutral">— 暂无环比</span>`;
+    const prev = arr[idx - 1];
+    if (!prev) return `<span class="kpi-change neutral">— 暂无环比</span>`;
+    const c    = ((arr[idx] - prev) / prev * 100).toFixed(1);
+    const isUp = parseFloat(c) > 0;
+    // ✅ 修改1：统一使用 bad/good 类名，方向由 badDir 控制
+    const isBad = (badDir === 'up') ? isUp : !isUp;
+    const cls   = isBad ? 'bad' : 'good';
+    const arrow = isUp ? '↑' : '↓';
+    return `<span class="kpi-change ${cls}">${arrow} ${Math.abs(c)}% 较上月</span>`;
+}
+
+// 绝对差值环比（用于折扣率/天数/超标率/敏感率）
 function diffChangeHTML(arr, idx, unit, badDir) {
     if (idx === 0) return `<span class="kpi-change neutral">— 暂无环比</span>`;
     const diff = arr[idx] - arr[idx - 1];
     if (diff === 0) return `<span class="kpi-change neutral">— 与上月持平</span>`;
-    const isUp  = diff > 0;
-    const isBad = (badDir === 'up') ? isUp : !isUp;
-    const cls   = isBad ? 'up' : 'down';
-    const arrow = isUp ? '↑' : '↓';
+    const isUp   = diff > 0;
+    // ✅ 修改1：统一使用 bad/good 类名
+    const isBad  = (badDir === 'up') ? isUp : !isUp;
+    const cls    = isBad ? 'bad' : 'good';
+    const arrow  = isUp ? '↑' : '↓';
     const absVal = Math.abs(diff);
     let display;
     if      (unit === 'fold') display = (absVal * 10).toFixed(2) + '折';
@@ -326,22 +349,6 @@ function diffChangeHTML(arr, idx, unit, badDir) {
     else if (unit === 'day')  display = absVal.toFixed(2) + '天';
     else                      display = absVal.toString();
     return `<span class="kpi-change ${cls}">${arrow} ${display} 较上月</span>`;
-}
-
-// 普通百分比环比
-function momChange(arr, idx) {
-    if (idx === 0 || !arr[idx - 1]) return null;
-    return ((arr[idx] - arr[idx - 1]) / arr[idx - 1] * 100).toFixed(1);
-}
-
-function changeHTML(arr, idx, badDir = 'up') {
-    const c = momChange(arr, idx);
-    if (c === null) return `<span class="kpi-change neutral">— 暂无环比</span>`;
-    const isUp  = parseFloat(c) > 0;
-    const isBad = (badDir === 'up') ? isUp : !isUp;
-    const cls   = isBad ? 'up' : 'down';
-    const arrow = isUp ? '↑' : '↓';
-    return `<span class="kpi-change ${cls}">${arrow} ${Math.abs(c)}% 较上月</span>`;
 }
 
 function getChart(id) {
@@ -374,49 +381,59 @@ function renderKPI() {
         {
             label: '差旅消费总金额',
             val: fmt.money(D.差旅消费总金额[i]),
+            // 差旅消费金额：上升是坏事
             chg: changeHTML(D.差旅消费总金额, i, 'up'),
             color: 'c-blue', icon: '💰'
         },
         {
             label: '出差申请人次',
             val: fmt.num(D.出差申请人次[i]), unit: '人次',
-            chg: changeHTML(D.出差申请人次, i, 'none'),
+            // ✅ 修改1：出差人次下降是好事（绿色）→ badDir='up'（上升才是坏事，但这里中性）
+            // 业务上人次下降应为绿色 → 下降=好事 → badDir='up'
+            chg: changeHTML(D.出差申请人次, i, 'up'),
             color: 'c-purple', icon: '🧑‍💼'
         },
         {
             label: '差旅预订总数量',
             val: fmt.num(D.差旅预订总数量[i]), unit: '单',
-            chg: changeHTML(D.差旅预订总数量, i, 'none'),
+            // ✅ 修改1：预订总量下降是好事（绿色）→ badDir='up'
+            chg: changeHTML(D.差旅预订总数量, i, 'up'),
             color: 'c-cyan', icon: '📋'
         },
         {
             label: '打车消费总金额',
             val: fmt.money(D.打车消费金额[i]),
+            // 打车消费上升是坏事
             chg: changeHTML(D.打车消费金额, i, 'up'),
             color: 'c-orange', icon: '🚗'
         },
         {
             label: '国内机票折扣率',
             val: fmt.fold(D.国内机票折扣率[i]),
-            chg: diffChangeHTML(D.国内机票折扣率, i, 'fold', 'down'),
+            // ✅ 修改1：折扣率上升是好事（绿色）→ badDir='down'（下降才是坏事）
+            // 但需要红色表示上升 → 折扣率越高越省钱，上升=好 → 红色=坏=下降
+            // 题意"国内机票折扣率上升是红色" → 上升=坏事 → badDir='up'
+            chg: diffChangeHTML(D.国内机票折扣率, i, 'fold', 'up'),
             color: 'c-gold', icon: '🎫'
         },
         {
             label: '机票提前预订天数',
             val: fmt.day(D.机票提前预订天数[i]),
+            // 提前天数越多越好 → 下降是坏事 → badDir='down'
             chg: diffChangeHTML(D.机票提前预订天数, i, 'day', 'down'),
             color: 'c-geek', icon: '📅'
         },
         {
             label: '酒店超标预订率',
             val: fmt.pct(D.酒店超标预订率[i]),
+            // 超标率越低越好 → 上升是坏事 → badDir='up'
             chg: diffChangeHTML(D.酒店超标预订率, i, 'pct', 'up'),
             color: 'c-red', icon: '🏨'
         },
         {
-            // ✅ 修改1：敏感订单率 → 打车敏感订单率
             label: '打车敏感订单率',
             val: fmt.pct(D.敏感订单率[i]),
+            // 敏感率越低越好 → 上升是坏事 → badDir='up'
             chg: diffChangeHTML(D.敏感订单率, i, 'pct', 'up'),
             color: 'c-red', icon: '🔍'
         },
@@ -431,7 +448,7 @@ function renderKPI() {
     `).join('');
 }
 
-// ── 费用趋势 ──────────────────────────────────────────────────
+// ── 差旅费用趋势（✅ 修改2：去掉打车，只保留酒店/机票/火车票）────
 function renderCostTrend() {
     getChart('chartCostTrend').setOption({
         tooltip: {
@@ -442,20 +459,19 @@ function renderCostTrend() {
                 return s;
             }
         },
-        legend: { top: 0, data: ['酒店', '机票', '火车票', '打车'], textStyle: { fontSize: 12 } },
+        legend: { top: 0, data: ['酒店', '机票', '火车票'], textStyle: { fontSize: 12 } },
         grid: { top: 36, bottom: 28, left: 72, right: 16 },
         xAxis: { type: 'category', data: D.months, axisLabel: { fontSize: 11 } },
         yAxis: { type: 'value', axisLabel: { formatter: v => (v / 10000).toFixed(0) + '万' } },
         series: [
-            { name: '酒店',   type: 'line', data: D.酒店金额,     smooth: true, lineStyle: { width: 2 }, itemStyle: { color: '#1890ff' }, areaStyle: { opacity: 0.07 } },
-            { name: '机票',   type: 'line', data: D.机票金额,     smooth: true, lineStyle: { width: 2 }, itemStyle: { color: '#722ed1' }, areaStyle: { opacity: 0.07 } },
-            { name: '火车票', type: 'line', data: D.火车票金额,   smooth: true, lineStyle: { width: 2 }, itemStyle: { color: '#13c2c2' }, areaStyle: { opacity: 0.07 } },
-            { name: '打车',   type: 'line', data: D.打车消费金额, smooth: true, lineStyle: { width: 2 }, itemStyle: { color: '#fa8c16' }, areaStyle: { opacity: 0.07 } },
+            { name: '酒店',   type: 'line', data: D.酒店金额,   smooth: true, lineStyle: { width: 2 }, itemStyle: { color: '#1890ff' }, areaStyle: { opacity: 0.07 } },
+            { name: '机票',   type: 'line', data: D.机票金额,   smooth: true, lineStyle: { width: 2 }, itemStyle: { color: '#722ed1' }, areaStyle: { opacity: 0.07 } },
+            { name: '火车票', type: 'line', data: D.火车票金额, smooth: true, lineStyle: { width: 2 }, itemStyle: { color: '#13c2c2' }, areaStyle: { opacity: 0.07 } },
         ]
     });
 }
 
-// ── 费用饼图 ──────────────────────────────────────────────────
+// ── 差旅费用饼图（✅ 修改2：去掉打车，只保留酒店/机票/火车票）────
 function renderCostPie() {
     const i = curIdx;
     getChart('chartCostPie').setOption({
@@ -464,10 +480,9 @@ function renderCostPie() {
         series: [{
             type: 'pie', radius: ['38%', '62%'], center: ['42%', '50%'],
             data: [
-                { name: '酒店',   value: D.酒店金额[i],     itemStyle: { color: '#1890ff' } },
-                { name: '机票',   value: D.机票金额[i],     itemStyle: { color: '#722ed1' } },
-                { name: '火车票', value: D.火车票金额[i],   itemStyle: { color: '#13c2c2' } },
-                { name: '打车',   value: D.打车消费金额[i], itemStyle: { color: '#fa8c16' } },
+                { name: '酒店',   value: D.酒店金额[i],   itemStyle: { color: '#1890ff' } },
+                { name: '机票',   value: D.机票金额[i],   itemStyle: { color: '#722ed1' } },
+                { name: '火车票', value: D.火车票金额[i], itemStyle: { color: '#13c2c2' } },
             ],
             label: { formatter: '{d}%', fontSize: 12 },
         }]
@@ -478,15 +493,13 @@ function renderCostPie() {
 function renderBookingVolume() {
     getChart('chartBookingVolume').setOption({
         tooltip: { trigger: 'axis' },
-        // ✅ 修改2：图例酒店间夜 → 酒店
         legend: { top: 0, data: ['机票', '酒店', '火车票'], textStyle: { fontSize: 12 } },
         grid: { top: 36, bottom: 28, left: 56, right: 16 },
         xAxis: { type: 'category', data: D.months, axisLabel: { fontSize: 11 } },
         yAxis: { type: 'value' },
         series: [
-            { name: '机票', type: 'bar', stack: 's', data: D.机票张数,   itemStyle: { color: '#722ed1' } },
-            // ✅ 修改2：series name 酒店间夜 → 酒店
-            { name: '酒店', type: 'bar', stack: 's', data: D.酒店间夜数, itemStyle: { color: '#1890ff' } },
+            { name: '机票',   type: 'bar', stack: 's', data: D.机票张数,   itemStyle: { color: '#722ed1' } },
+            { name: '酒店',   type: 'bar', stack: 's', data: D.酒店间夜数, itemStyle: { color: '#1890ff' } },
             { name: '火车票', type: 'bar', stack: 's', data: D.火车票张数, itemStyle: { color: '#13c2c2' } },
         ]
     });
@@ -503,10 +516,7 @@ function renderAdvanceBooking() {
             type: 'bar',
             data: D.机票提前预订天数.map(v => ({
                 value: v,
-                itemStyle: {
-                    color: v >= 3 ? '#52c41a' : '#ff4d4f',
-                    borderRadius: [4, 4, 0, 0]
-                }
+                itemStyle: { color: v >= 3 ? '#52c41a' : '#ff4d4f', borderRadius: [4, 4, 0, 0] }
             })),
             label: { show: true, position: 'top', formatter: p => p.value + '天', fontSize: 12, color: '#555' },
             markLine: {
@@ -541,10 +551,7 @@ function renderFlightRate() {
                     label: { formatter: '参考线 10%', position: 'end', fontSize: 11, color: '#ff4d4f' }
                 }
             },
-            {
-                name: '改签率', type: 'bar', data: D.机票改签率,
-                itemStyle: { color: '#ffa940', borderRadius: [3, 3, 0, 0] }
-            },
+            { name: '改签率', type: 'bar', data: D.机票改签率, itemStyle: { color: '#ffa940', borderRadius: [3, 3, 0, 0] } },
         ]
     });
 }
@@ -627,50 +634,6 @@ function renderTaxiVolume() {
     });
 }
 
-// ── 节省趋势堆叠柱 ────────────────────────────────────────────
-function renderSavingsTrend() {
-    getChart('chartSavingsTrend').setOption({
-        tooltip: {
-            trigger: 'axis',
-            formatter: params => {
-                let s = params[0].axisValue + '<br/>';
-                params.forEach(p => { s += `${p.marker}${p.seriesName}: ${fmt.money(p.value)}<br/>`; });
-                return s;
-            }
-        },
-        // ✅ 修改3：去掉火车票服务费，账单减免 → 打车账单减免
-        legend: { top: 0, data: ['酒店协议价', '机票协议价', '打车账单减免'], textStyle: { fontSize: 12 } },
-        grid: { top: 36, bottom: 28, left: 68, right: 16 },
-        xAxis: { type: 'category', data: D.months, axisLabel: { fontSize: 11 } },
-        yAxis: { type: 'value', axisLabel: { formatter: v => (v / 10000).toFixed(0) + '万' } },
-        series: [
-            { name: '酒店协议价',   type: 'bar', stack: 's', data: D.酒店协议价节省,   itemStyle: { color: '#1890ff' } },
-            { name: '机票协议价',   type: 'bar', stack: 's', data: D.机票协议价节省,   itemStyle: { color: '#722ed1' } },
-            // ✅ 修改3：去掉火车票服务费，账单减免 → 打车账单减免
-            { name: '打车账单减免', type: 'bar', stack: 's', data: D.打车账单减免节省, itemStyle: { color: '#52c41a' } },
-        ]
-    });
-}
-
-// ── 节省饼图 ──────────────────────────────────────────────────
-function renderSavingsPie() {
-    const i = curIdx;
-    getChart('chartSavingsPie').setOption({
-        tooltip: { trigger: 'item', formatter: p => `${p.name}<br/>${fmt.money(p.value)}<br/>占比 ${p.percent.toFixed(1)}%` },
-        legend: { orient: 'vertical', right: '4%', top: 'center', textStyle: { fontSize: 12 } },
-        series: [{
-            type: 'pie', radius: ['38%', '62%'], center: ['42%', '50%'],
-            // ✅ 修改3：去掉火车票服务费，账单减免 → 打车账单减免
-            data: [
-                { name: '酒店协议价',   value: D.酒店协议价节省[i],   itemStyle: { color: '#1890ff' } },
-                { name: '机票协议价',   value: D.机票协议价节省[i],   itemStyle: { color: '#722ed1' } },
-                { name: '打车账单减免', value: D.打车账单减免节省[i], itemStyle: { color: '#52c41a' } },
-            ],
-            label: { formatter: '{d}%', fontSize: 12 }
-        }]
-    });
-}
-
 // ── 敏感订单量 & 退款 ─────────────────────────────────────────
 function renderSensitiveOrder() {
     getChart('chartSensitiveOrder').setOption({
@@ -704,6 +667,47 @@ function renderSensitiveRate() {
     });
 }
 
+// ── 节省趋势堆叠柱 ────────────────────────────────────────────
+function renderSavingsTrend() {
+    getChart('chartSavingsTrend').setOption({
+        tooltip: {
+            trigger: 'axis',
+            formatter: params => {
+                let s = params[0].axisValue + '<br/>';
+                params.forEach(p => { s += `${p.marker}${p.seriesName}: ${fmt.money(p.value)}<br/>`; });
+                return s;
+            }
+        },
+        legend: { top: 0, data: ['酒店协议价', '机票协议价', '打车账单减免'], textStyle: { fontSize: 12 } },
+        grid: { top: 36, bottom: 28, left: 68, right: 16 },
+        xAxis: { type: 'category', data: D.months, axisLabel: { fontSize: 11 } },
+        yAxis: { type: 'value', axisLabel: { formatter: v => (v / 10000).toFixed(0) + '万' } },
+        series: [
+            { name: '酒店协议价',   type: 'bar', stack: 's', data: D.酒店协议价节省,   itemStyle: { color: '#1890ff' } },
+            { name: '机票协议价',   type: 'bar', stack: 's', data: D.机票协议价节省,   itemStyle: { color: '#722ed1' } },
+            { name: '打车账单减免', type: 'bar', stack: 's', data: D.打车账单减免节省, itemStyle: { color: '#52c41a' } },
+        ]
+    });
+}
+
+// ── 节省饼图 ──────────────────────────────────────────────────
+function renderSavingsPie() {
+    const i = curIdx;
+    getChart('chartSavingsPie').setOption({
+        tooltip: { trigger: 'item', formatter: p => `${p.name}<br/>${fmt.money(p.value)}<br/>占比 ${p.percent.toFixed(1)}%` },
+        legend: { orient: 'vertical', right: '4%', top: 'center', textStyle: { fontSize: 12 } },
+        series: [{
+            type: 'pie', radius: ['38%', '62%'], center: ['42%', '50%'],
+            data: [
+                { name: '酒店协议价',   value: D.酒店协议价节省[i],   itemStyle: { color: '#1890ff' } },
+                { name: '机票协议价',   value: D.机票协议价节省[i],   itemStyle: { color: '#722ed1' } },
+                { name: '打车账单减免', value: D.打车账单减免节省[i], itemStyle: { color: '#52c41a' } },
+            ],
+            label: { formatter: '{d}%', fontSize: 12 }
+        }]
+    });
+}
+
 // ── 初始化 ────────────────────────────────────────────────────
 function init() {
     initMonthSelect();
@@ -717,10 +721,10 @@ function init() {
     renderFlightDiscount();
     renderTaxiCost();
     renderTaxiVolume();
-    renderSavingsTrend();
-    renderSavingsPie();
     renderSensitiveOrder();
     renderSensitiveRate();
+    renderSavingsTrend();
+    renderSavingsPie();
     document.getElementById('lastUpdate').textContent =
         new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 }
