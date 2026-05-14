@@ -287,7 +287,7 @@ const D = {
     酒店协议价节省:   [210608,      67900,       225000,      184000    ],
     机票协议价节省:   [34596,       11858,       39000,       44000     ],
     火车票服务费节省: [6392,        2860,        0,           0         ],
-    账单减免节省:     [31856,       20147,       37985,       0         ],
+    打车账单减免节省:     [31856,       20147,       37985,       0         ],
     合计节省:         [245000,      80000,       265000,      228000    ],
 };
 
@@ -488,13 +488,13 @@ function renderCostPie() {
 function renderBookingVolume() {
     getChart('chartBookingVolume').setOption({
         tooltip: { trigger: 'axis' },
-        legend: { top: 0, data: ['机票', '酒店间夜', '火车票'], textStyle: { fontSize: 12 } },
+        legend: { top: 0, data: ['机票', '酒店', '火车票'], textStyle: { fontSize: 12 } },
         grid: { top: 36, bottom: 28, left: 56, right: 16 },
         xAxis: { type: 'category', data: D.months, axisLabel: { fontSize: 11 } },
         yAxis: { type: 'value' },
         series: [
             { name: '机票',     type: 'bar', stack: 's', data: D.机票张数,   itemStyle: { color: '#722ed1' } },
-            { name: '酒店间夜', type: 'bar', stack: 's', data: D.酒店间夜数, itemStyle: { color: '#1890ff' } },
+            { name: '酒店', type: 'bar', stack: 's', data: D.酒店间夜数, itemStyle: { color: '#1890ff' } },
             { name: '火车票',   type: 'bar', stack: 's', data: D.火车票张数, itemStyle: { color: '#13c2c2' } },
         ]
     });
@@ -659,7 +659,7 @@ function renderSavingsTrend() {
             { name: '酒店协议价',   type: 'bar', stack: 's', data: D.酒店协议价节省,   itemStyle: { color: '#1890ff' } },
             { name: '机票协议价',   type: 'bar', stack: 's', data: D.机票协议价节省,   itemStyle: { color: '#722ed1' } },
             { name: '火车票服务费', type: 'bar', stack: 's', data: D.火车票服务费节省, itemStyle: { color: '#13c2c2' } },
-            { name: '账单减免',     type: 'bar', stack: 's', data: D.账单减免节省,     itemStyle: { color: '#52c41a' } },
+            { name: '打车账单减免',     type: 'bar', stack: 's', data: D.账单减免节省,     itemStyle: { color: '#52c41a' } },
         ]
     });
 }
@@ -676,7 +676,7 @@ function renderSavingsPie() {
                 { name: '酒店协议价',   value: D.酒店协议价节省[i],   itemStyle: { color: '#1890ff' } },
                 { name: '机票协议价',   value: D.机票协议价节省[i],   itemStyle: { color: '#722ed1' } },
                 { name: '火车票服务费', value: D.火车票服务费节省[i], itemStyle: { color: '#13c2c2' } },
-                { name: '账单减免',     value: D.账单减免节省[i],     itemStyle: { color: '#52c41a' } },
+                { name: '打车账单减免',     value: D.账单减免节省[i],     itemStyle: { color: '#52c41a' } },
             ],
             label: { formatter: '{d}%', fontSize: 12 }
         }]
